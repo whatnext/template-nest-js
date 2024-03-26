@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>template-nest.js</title>
+        <script src='/template-nest.js'></script>
+    </head>
+    <body>
+        <script>
+         const template_dir = "/templates";
+         const nest = new TemplateNest(template_dir);
+         const page = {
+             "TEMPLATE": "00-simple-page",
+             "variable": "Simple Variable",
+             "simple_component": {
+                 "TEMPLATE": "01-simple-component",
+             }
+         };
+         (async() => {
+             const output = await nest.render(page);
+             console.log(output);
+         })();
+        </script>
+    </body>
+</html>
