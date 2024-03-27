@@ -148,6 +148,24 @@ class TemplateNest {
                 );
 
                 const matches = [...template_body.matchAll(regex)];
+
+                // Check if die-on-bad-params is true and if there are keys in
+                // the template hash that are not present in the template file.
+                if (nest.die_on_bad_params) {
+                    const template_hash_variables = Object.keys(structure)
+                          .filter(key => key !== nest.name_label);
+
+                    const template_file_keys = new Set(matches.map(match => match[1].trim()));
+
+                    if (template_hash_variables.some(key => !template_file_keys.has(key)))
+                        throw new Error(`
+                             Variables in template hash: ${template_hash_variables.sort().join(', ')}
+                             Variables in template file: ${Array.from(template_file_keys).sort().join(', ')}
+                             die-on-bad-params value: ${nest.die_on_bad_params}
+                             All variables in template hash must be valid if die-on-bad-params is True.
+                `);
+                }
+
                 const variables = matches.map(match => {
                     // Check if the variable is escaped
                     if (nest.token_escape_char && match.index >= nest.token_escape_char.length) {
