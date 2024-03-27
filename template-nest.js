@@ -33,22 +33,22 @@ class TemplateNest {
         Object.assign(this, default_values, args);
     }
 
-    render( structure ) {
+    render(structure) {
         const nest = this;
         const type = Object.prototype.toString.call( structure );
 
         let promise;
         if ( type === '[object Array]' )
-            promise = nest._renderArray( structure );
+            promise = nest._renderArray(structure);
         else if ( type ==='[object Object]' )
-            promise = nest._renderObject( structure );
+            promise = nest._renderObject(structure);
         else
-            promise = new Promise( (resolve,reject) => { resolve( structure ) } );
+            promise = new Promise((resolve,reject) => { resolve(structure) });
 
         return promise;
     }
 
-    _getTemplate( template_name ) {
+    _getTemplate(template_name) {
         const nest = this;
         const url = nest.template_dir + '/' + template_name + '.html';
         return new Promise( function(resolve, reject) {
@@ -75,7 +75,7 @@ class TemplateNest {
         });
     }
 
-    _renderArray( structure ) {
+    _renderArray(structure) {
         const nest = this;
         const promises = [];
 
@@ -93,14 +93,14 @@ class TemplateNest {
         return promise;
     }
 
-    _renderObject( structure ) {
+    _renderObject(structure) {
         const nest = this;
-        let template_name = structure[ nest.name_label ];
+        let template_name = structure[nest.name_label];
 
         if ( ! template_name )
             return console.error('A template structure object was passed without a template name');
 
-        let file_promise = nest._getTemplate( template_name );
+        let file_promise = nest._getTemplate(template_name);
         return file_promise
             .then(async (template_body) => {
                 let rendered = template_body;
@@ -109,11 +109,30 @@ class TemplateNest {
                 );
 
                 const matches = [...template_body.matchAll(regex)];
-                const variables = matches.map(match => ({
-                    name: match[1].trim(),
-                    start: match.index,
-                    end: match.index + match[0].length
-                }));
+                const variables = matches.map(match => {
+                    // Calculate the indent level.
+                    let indent_level = 0;
+                    if (match.index > 0) {
+                        // Find the last newline character before the variable's
+                        // start position
+                        const newline_position = rendered.lastIndexOf('\n', match.index - 1);
+
+                        // If there's no newline character before the variable,
+                        // use the start position as the indent level Otherwise,
+                        // calculate the difference between the start position
+                        // and the position of the newline character
+                        indent_level = newline_position === -1
+                            ? match.index
+                            : match.index - newline_position - 1;
+                    }
+
+                    return {
+                        start: match.index,
+                        end: match.index + match[0].length,
+                        name: match[1].trim(),
+                        indent_level: indent_level,
+                    };
+                });
 
                 variables.reverse();
 
@@ -122,6 +141,13 @@ class TemplateNest {
                     let render = "";
                     if (value !== undefined && value !== null)
                         render = await nest.render(value);
+
+                    // If fixed_indent is set then get the indent level and
+                    // replace all newlines in the rendered string.
+                    if (nest.fixed_indent && variable.indent_level !== 0) {
+                        const replacement = "\n" + " ".repeat(variable.indent_level);
+                        render = render.replace(/\n/g, replacement);
+                    }
 
                     rendered = rendered.substring(0, variable.start)
                         + render
