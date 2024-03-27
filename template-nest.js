@@ -116,6 +116,19 @@ class TemplateNest {
 
                 const matches = [...template_body.matchAll(regex)];
                 const variables = matches.map(match => {
+                    // Check if the variable is escaped
+                    if (nest.token_escape_char && match.index >= nest.token_escape_char.length) {
+                        const escape_char_start = match.index - nest.token_escape_char.length;
+                        if (rendered.slice(escape_char_start, match.index) === nest.token_escape_char)
+                            return {
+                                start: match.index - 1,
+                                end: match.index + match[0].length,
+                                name: '',
+                                indent_level: 0,
+                                escaped_token: true
+                            };
+                    }
+
                     // Calculate the indent level.
                     let indent_level = 0;
                     if (match.index > 0) {
@@ -136,13 +149,19 @@ class TemplateNest {
                         start: match.index,
                         end: match.index + match[0].length,
                         name: match[1].trim(),
-                        indent_level: indent_level,
+                        indent_level,
                     };
                 });
 
                 variables.reverse();
 
                 for (const variable of variables) {
+                    if (variable.escaped_token === true) {
+                        rendered = rendered.substring(0, variable.start)
+                            + rendered.substring(variable.end);
+                        continue;
+                    }
+
                     const value = structure[variable.name];
                     let render = "";
                     if (value !== undefined && value !== null)

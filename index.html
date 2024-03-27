@@ -34,6 +34,14 @@
              }
          };
 
+         const simple_page_token_escape = {
+             "TEMPLATE": "00-simple-page",
+             "variable": "Simple Variable",
+             "simple_component":  {
+                 "TEMPLATE": "01-simple-component-token-escape",
+             }
+         };
+
          const array_of_hash = [
              {
                  "TEMPLATE": "01-simple-component",
@@ -106,6 +114,11 @@
              fixed_indent: true
          });
 
+         const nest_token_escape = new TemplateNest({
+             template_dir: "/templates",
+             token_escape_char: "\\"
+         });
+
          const pages = [
              {
                  "name": "Simple Page",
@@ -139,6 +152,17 @@
                  "name": "Complex Page with Fixed Indent",
                  "page_render": nest_fixed_indent.render(complex_page),
                  "output": nest.render({ "TEMPLATE": "output/08-complex-page-fixed-indent" }),
+             }, {
+                 "name": "Simple Page with Token Escape",
+                 "page_render": nest_token_escape.render(simple_page_token_escape),
+                 "output": nest.render({ "TEMPLATE": "output/09-simple-page-token-escape" }),
+             }, {
+                 "name": "Simple Page with Token Escape - Escaped Variable at Start",
+                 "page_render": nest_token_escape.render({
+                     "TEMPLATE": "03-var-at-begin",
+                     "variable": "Simple Variable",
+                 }),
+                 "output": nest.render({ "TEMPLATE": "output/10-var-at-begin" }),
              },
          ];
 
