@@ -98,6 +98,11 @@
 
          const nest = new TemplateNest({ template_dir: "/templates" });
 
+         const nest_alt_name_label = new TemplateNest({
+             template_dir: "/templates",
+             name_label: "NAME"
+         });
+
          const nest_label = new TemplateNest({
              template_dir: "/templates",
              show_labels: true
@@ -133,6 +138,17 @@
              {
                  "name": "Simple Page",
                  "page_render": nest.render(simple_page),
+                 "output": nest.render({ "TEMPLATE": "output/01-simple-page" }),
+             }, {
+                 "name": "Simple Page - alt Name Label",
+                 "page_render": nest_alt_name_label.render({
+                     "NAME": "00-simple-page",
+                     "variable": "Simple Variable",
+                     "simple_component": {
+                         "NAME": "01-simple-component",
+                         "variable": "Simple Variable in Simple Component"
+                     }
+                 }),
                  "output": nest.render({ "TEMPLATE": "output/01-simple-page" }),
              }, {
                  "name": "Incomplete Page",
