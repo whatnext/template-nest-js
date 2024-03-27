@@ -1,8 +1,34 @@
 class TemplateNest {
-    constructor( template_dir ) {
-        this.template_dir = template_dir;
-        this.template_ident = 'TEMPLATE';
-        this.token_delims = ['<!--%','%-->'];
+    constructor(args) {
+        args = Object.assign(args, {
+            template_dir: "/templates",
+            name_label: "TEMPLATE",
+            token_delims: ['<!--%','%-->'],
+            template_extension: "html",
+
+            // If True, add comment to the rendered output to make it easier to identify
+            // which template the output is from.
+            show_labels: false,
+
+            // Used in conjuction with $.show-labels. If the template is not HTML then
+            // this can be used to change output label.
+            comment_delims: ['<!--', '-->'],
+
+            // If True, then an attempt to populate a template with a variable that
+            // doesn't exist (i.e. name not found in template) results in an error.
+            die_on_bad_params: false,
+
+            // Intended to improve readability when inspecting nested templates.
+            fixed_indent: false,
+
+            // To escape token delimiters.
+            token_escape_char: '',
+
+            defaults: {},
+            defaults_namespace_char: '.',
+        });
+        Object.assign(this, args);
+
         this.isBrowser = typeof window !== "undefined"
             && typeof window.document !== "undefined";
     }
