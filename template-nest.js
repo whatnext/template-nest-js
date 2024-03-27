@@ -50,7 +50,13 @@ class TemplateNest {
 
     _getTemplate(template_name) {
         const nest = this;
-        const url = nest.template_dir + '/' + template_name + '.html';
+        const url =
+              nest.template_dir
+              + '/'
+              + template_name
+              + '.'
+              + nest.template_extension;
+
         return new Promise( function(resolve, reject) {
             if (nest.is_browser)
                 fetch(url)
