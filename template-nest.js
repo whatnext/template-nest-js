@@ -95,42 +95,40 @@ class TemplateNest {
 
     _renderObject( structure ) {
         const nest = this;
-        let template_name = structure[ nest.template_ident ];
+        let template_name = structure[ nest.name_label ];
 
         if ( ! template_name )
-            console.error('A template structure object was passed without a template name');
-        else {
-            const param_keys = [];
-            const param_proms = [];
+            return console.error('A template structure object was passed without a template name');
 
-            for (let key in structure) {
-                if ( key === nest.template_ident )
-                    continue;
-                param_keys.push( key );
-                param_proms.push( nest.render( structure[ key ] ) );
-            }
+        let file_promise = nest._getTemplate( template_name );
+        return file_promise
+            .then(async (template_body) => {
+                let rendered = template_body;
+                const regex = new RegExp(
+                    `${nest.token_delims[0]}(.+?)${nest.token_delims[1]}`, 'gm'
+                );
 
-            let file_promise = nest._getTemplate( template_name );
-            let param_promise = file_promise.then( function( template_body ) {
-                return Promise.all( param_proms ).then( function(param_vals) {
-                    let html = template_body;
+                const matches = [...template_body.matchAll(regex)];
+                const variables = matches.map(match => ({
+                    name: match[1].trim(),
+                    start: match.index,
+                    end: match.index + match[0].length
+                }));
 
-                    for (let i = 0; i < param_keys.length; i++) {
-                        const regex = new RegExp(
-                            nest.token_delims[0]
-                                + '\\s+'
-                                + param_keys[i]
-                                + '\\s+'
-                                + nest.token_delims[1], 'gm'
-                        );
-                        html = html.replace( regex, param_vals[i] );
-                    }
-                    return html;
-                });
+                variables.reverse();
+
+                for (const variable of variables) {
+                    const value = structure[variable.name];
+                    let render = "";
+                    if (value !== undefined && value !== null)
+                        render = await nest.render(value);
+
+                    rendered = rendered.substring(0, variable.start)
+                        + render
+                        + rendered.substring(variable.end);
+                }
+                return rendered.trimEnd();
             });
-
-            return param_promise;
-        }
     }
 }
 
