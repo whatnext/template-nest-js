@@ -1,6 +1,6 @@
 class TemplateNest {
     constructor(args) {
-        args = Object.assign(args, {
+        const default_values = {
             template_dir: "/templates",
             name_label: "TEMPLATE",
             token_delims: ['<!--%','%-->'],
@@ -26,11 +26,11 @@ class TemplateNest {
 
             defaults: {},
             defaults_namespace_char: '.',
-        });
-        Object.assign(this, args);
 
-        this.isBrowser = typeof window !== "undefined"
-            && typeof window.document !== "undefined";
+            is_browser: typeof window !== "undefined"
+                && typeof window.document !== "undefined"
+        };
+        Object.assign(this, default_values, args);
     }
 
     render( structure ) {
@@ -52,7 +52,7 @@ class TemplateNest {
         const nest = this;
         const url = nest.template_dir + '/' + template_name + '.html';
         return new Promise( function(resolve, reject) {
-            if (nest.isBrowser)
+            if (nest.is_browser)
                 fetch(url)
                 .then((response) => {
                     return response.text();
@@ -127,6 +127,26 @@ class TemplateNest {
                         + render
                         + rendered.substring(variable.end);
                 }
+
+                // Add labels if show_labels is true
+                if (nest.show_labels) {
+                    const label_start = nest.comment_delims[0]
+                          + " BEGIN "
+                          + template_name
+                          + " "
+                          + nest.comment_delims[1]
+                          + "\n";
+
+                    const label_end = nest.comment_delims[0]
+                          + " END "
+                          + template_name
+                          + " "
+                          + nest.comment_delims[1]
+                          + "\n";
+
+                    rendered = label_start + rendered + label_end;
+                }
+
                 return rendered.trimEnd();
             });
     }

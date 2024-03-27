@@ -9,9 +9,6 @@
     </head>
     <body>
         <script>
-         const nest = new TemplateNest({
-             "template_dir": "/templates"
-         });
          const simple_page = {
              "TEMPLATE": "00-simple-page",
              "variable": "Simple Variable",
@@ -83,36 +80,58 @@
              }
          ];
 
+         const show_label_page = {
+             "TEMPLATE": "00-simple-page",
+             "variable": "Simple Variable",
+             "simple_component":  {
+                 "TEMPLATE":"01-simple-component",
+                 "variable": "Simple Variable in Simple Component"
+             }
+         };
+
+         const nest = new TemplateNest({ template_dir: "/templates" });
+         const nest_label = new TemplateNest({
+             template_dir: "/templates",
+             show_labels: true
+         });
 
          const pages = [
              {
                  "name": "simple_page",
-                 "hash": simple_page,
+                 "page_render": nest.render(simple_page),
                  "output": nest.render({ "TEMPLATE": "output/01-simple-page" }),
              }, {
                  "name": "incomplete_page",
-                 "hash": incomplete_page,
+                 "page_render": nest.render(incomplete_page),
                  "output": nest.render({ "TEMPLATE": "output/03-incomplete-page" }),
              }, {
                  "name": "complex_page",
-                 "hash": complex_page,
+                 "page_render": nest.render(complex_page),
                  "output": nest.render({ "TEMPLATE": "output/02-complex-page" }),
              }, {
                  "name": "array_of_hash",
-                 "hash": array_of_hash,
+                 "page_render": nest.render(array_of_hash),
                  "output": nest.render({ "TEMPLATE": "output/13-render-with-array-of-template-hash" }),
+             }, {
+                 "name": "show_label_page",
+                 "page_render": nest_label.render(show_label_page),
+                 "output": nest.render({ "TEMPLATE": "output/04-simple-page-with-labels" }),
              },
          ];
 
          for (const page of pages) {
              (async() => {
-                 const rendered_output = await nest.render(page["hash"]);
+                 const rendered_output = await page["page_render"];
                  const output = await page["output"];
 
                  if (rendered_output === output)
                      console.log(`${page["name"]} pass`);
-                 else
+                 else {
                      console.error(`${page["name"]} fail`);
+                     console.error(rendered_output);
+                     console.error(output);
+                 }
+
              })();
          }
         </script>
