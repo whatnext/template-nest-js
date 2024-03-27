@@ -136,8 +136,8 @@ class TemplateNest {
         const nest = this;
         let template_name = structure[nest.name_label];
 
-        if ( ! template_name )
-            return console.error('A template structure object was passed without a template name');
+        if (!template_name)
+            throw new Error("Template object was passed without a Name Label.");
 
         let file_promise = nest._getTemplate(template_name);
         return file_promise
