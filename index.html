@@ -119,6 +119,16 @@
              token_escape_char: "\\"
          });
 
+         const nest_with_defaults = new TemplateNest({
+             template_dir: "/templates",
+             defaults: {
+                 variable: "Simple Variable",
+                 space: {
+                     inside: 'A variable inside a space.'
+                 }
+             }
+         });
+
          const pages = [
              {
                  "name": "Simple Page",
@@ -163,10 +173,24 @@
                      "variable": "Simple Variable",
                  }),
                  "output": nest.render({ "TEMPLATE": "output/10-var-at-begin" }),
+             }, {
+                 "name": "Simple Page with Defaults",
+                 "page_render": nest_with_defaults.render({
+                     "TEMPLATE": "00-simple-page",
+                     "simple_component":  {
+                         "TEMPLATE":"01-simple-component",
+                         "variable": "Simple Variable in Simple Component"
+                     }
+                 }),
+                 "output": nest.render({ "TEMPLATE": "output/01-simple-page" }),
+             }, {
+                 "name": "Simple Page with Defaults - Nested Value",
+                 "page_render": nest_with_defaults.render({ "TEMPLATE": "03-namespace-page", }),
+                 "output": nest.render({ "TEMPLATE": "output/11-namespace-page" }),
              },
          ];
 
-         for (const page of pages) {
+         for (const page of pages)
              (async() => {
                  const rendered_output = await page["page_render"];
                  const output = await page["output"];
@@ -180,7 +204,6 @@
                  }
 
              })();
-         }
         </script>
     </body>
 </html>

@@ -81,6 +81,39 @@ class TemplateNest {
         });
     }
 
+    _getDefaultValue(name) {
+        let value;
+
+        // Check if the defaults object is defined and not empty
+        if (this.defaults && Object.keys(this.defaults).length > 0) {
+            // Try to find the value directly in the defaults object
+            value = this.defaults[name];
+
+            // If value not found and namespace character is defined
+            if (!value && this.defaults_namespace_char && this.defaults_namespace_char.length > 0) {
+                // Split the name by the namespace character and reverse the array
+                let keys = name.split(this.defaults_namespace_char).reverse();
+
+                // Initialize value with the last key
+                value = this.defaults[keys.pop()];
+
+                // Traverse the keys in reverse order to find the nested value
+                while (keys.length > 0) {
+                    let key = keys.pop();
+                    if (value && value.hasOwnProperty(key)) {
+                        value = value[key];
+                    } else {
+                        // If the key is not found in the current object, break the loop
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Return the found value or an empty string if not found
+        return value !== undefined ? value : '';
+    }
+
     _renderArray(structure) {
         const nest = this;
         const promises = [];
@@ -162,10 +195,11 @@ class TemplateNest {
                         continue;
                     }
 
-                    const value = structure[variable.name];
                     let render = "";
-                    if (value !== undefined && value !== null)
-                        render = await nest.render(value);
+                    if (structure[variable.name] !== undefined)
+                        render = await nest.render(structure[variable.name]);
+                    else
+                        render = nest._getDefaultValue(variable.name);
 
                     // If fixed_indent is set then get the indent level and
                     // replace all newlines in the rendered string.
