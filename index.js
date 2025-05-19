@@ -1,7 +1,6 @@
 const TemplateNest = require('./template-nest');
 
-const template_dir = "./templates";
-const nest = new TemplateNest(template_dir);
+const nest = new TemplateNest();
 const page = {
     "TEMPLATE": "00-simple-page",
     "variable": "Simple Variable",

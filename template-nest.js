@@ -1,10 +1,22 @@
 class TemplateNest {
+    static cacheMap = {}; // Shared across all instances
+
     constructor(args) {
+        const isBrowser = typeof window !== "undefined"
+              && typeof window.document !== "undefined";
+
         const default_values = {
-            template_dir: "/templates",
+            template_dir: isBrowser ? "/templates" : "./templates",
             name_label: "TEMPLATE",
             token_delims: ['<!--%','%-->'],
             template_extension: "html",
+
+            // If True, cache the template results temporarily according to
+            // the TTL.
+            cache: true,
+
+            // TTL in milliseconds, default: 1 minute.
+            cache_ttl: 1 * 60 * 1000,
 
             // If True, add comment to the rendered output to make it easier to identify
             // which template the output is from.
@@ -27,8 +39,7 @@ class TemplateNest {
             defaults: {},
             defaults_namespace_char: '.',
 
-            is_browser: typeof window !== "undefined"
-                && typeof window.document !== "undefined"
+            is_browser: isBrowser,
         };
         Object.assign(this, default_values, args);
     }
@@ -42,12 +53,28 @@ class TemplateNest {
             promise = nest._renderArray(structure);
         else if ( type ==='[object Object]' )
             promise = nest._renderObject(structure);
+        else if ( type ==='[object Null]' )
+            promise = new Promise((resolve,_) => { resolve('') });
         else
-            promise = new Promise((resolve,reject) => { resolve(structure) });
+            promise = new Promise((resolve,_) => { resolve(structure) });
 
         return promise;
     }
 
+    _setMap(key, value) {
+        const now = Date.now();
+        TemplateNest.cacheMap[key] = { value, expiresAt: now + this.cache_ttl };
+    }
+
+    _getMap(key) {
+        const now = Date.now();
+        const cacheItem = TemplateNest.cacheMap[key];
+        if (!cacheItem || cacheItem.expiresAt < now) {
+            delete TemplateNest.cacheMap[key];
+            return null;
+        }
+        return cacheItem.value;
+    }
     _getTemplate(template_name) {
         const nest = this;
         const url =
@@ -58,12 +85,26 @@ class TemplateNest {
               + nest.template_extension;
 
         return new Promise( function(resolve, reject) {
+            if (nest.cache) {
+                const cacheItem = nest._getMap(url);
+                if (cacheItem !== null) {
+                    resolve(cacheItem);
+                    return;
+                }
+            }
+
             if (nest.is_browser)
                 fetch(url)
                 .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
                     return response.text();
                 })
                 .then((template_body) => {
+                    if (nest.cache)
+                        nest._setMap(url, template_body);
+
                     resolve(template_body);
                 })
                 .catch((error) => {
@@ -74,8 +115,12 @@ class TemplateNest {
                 return fs.readFile(url, 'utf8', (err, data) => {
                     if (err) {
                         reject(err);
+                    } else {
+                        if (nest.cache)
+                            nest._setMap(url, data);
+
+                        resolve(data);
                     }
-                    resolve(data);
                 });
             }
         });
@@ -255,4 +300,6 @@ class TemplateNest {
     }
 }
 
-module.exports = TemplateNest;
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = TemplateNest;
+}
